@@ -1,0 +1,409 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %} Tables {% endblock title %}
+
+{% block content %}
+
+  <div class="header bg-primary pb-6">
+    <div class="container-fluid">
+      <div class="header-body">
+        <div class="row align-items-center py-4">
+          <div class="col-lg-6 col-7">
+            <h6 class="h2 text-white d-inline-block mb-0">Lista de Reportes</h6>
+          </div>
+          {% if not user.is_staff %}
+            <div class="col-lg-6 col-5 text-right">
+              <a href="#" class="btn btn-sm btn-neutral" data-toggle="modal" data-target="#newRequestModal">Nuevo</a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Page content -->
+  <div class="container-fluid mt--6">
+    <div class="row">
+      <div class="col">
+        <div class="card">
+          <!-- Card header -->
+          <div class="card-header border-0">
+            
+          </div>
+          <!-- Light table -->
+          <div class="table-responsive">
+            <table class="table align-items-center table-flush">
+              <thead class="thead-light">
+                <tr>
+                  {% if user.is_staff %}
+                    <th scope="col" class="sort" data-sort="user">Usuario</th>
+                  {% endif %}
+                  <th scope="col" class="sort" data-sort="name">Titulo</th>
+                  <th scope="col" class="sort" data-sort="budget">Descripción</th>
+                  <th scope="col" class="sort" data-sort="budget">Ubicación</th>
+                  <th scope="col" class="sort" data-sort="status">Status</th>
+                  <th scope="col"></th>
+                </tr>
+              </thead>
+              <tbody class="list">
+                {% for request in user_requests %}
+                <tr>
+                  {% if user.is_staff %}
+                  <th scope="row">
+                    <div class="media align-items-center">
+                      <div class="media-body">
+                        <span class="name mb-0 text-sm">{{ request.user.username }}</span>
+                      </div>
+                    </div>
+                  </th>
+                  {% endif %}
+                  <th scope="row">
+                    <div class="media align-items-center">
+                      <div class="media-body">
+                        <span class="name mb-0 text-sm">{{ request.title }}</span>
+                      </div>
+                    </div>
+                  </th>
+                  <td class="budget">
+                    {{ request.description }}
+                  </td>
+                  <td class="budget">
+                    {{ request.location }}
+                  </td>
+                  <td>
+                    <span class="badge badge-dot mr-4">
+                        {% if request.status == 'pending' %}
+                            <i class="bg-warning"></i>
+                        {% elif request.status == 'in_progress' %}
+                            <i class="bg-info"></i>
+                        {% elif request.status == 'completed' %}
+                            <i class="bg-success"></i>
+                        {% endif %}
+                        <span class="status">{{ request.get_status_display }}</span>
+                    </span>
+                  </td>                
+                  <td class="text-right">
+                    <div class="dropdown">
+                      <a class="btn btn-sm btn-icon-only text-light" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v"></i>
+                      </a>
+                      {% if user.is_staff %}
+                      <div class="dropdown-menu dropdown-menu-right dropdown-menu-arrow">
+                        <a class="dropdown-item" href="#" data-toggle="modal" data-target="#changeStatusModal{{ request.id }}">Cambiar Estatus</a>
+                      </div>
+                      {% else %}
+                      <div class="dropdown-menu dropdown-menu-right dropdown-menu-arrow">
+                        <a class="dropdown-item" href="#" data-toggle="modal" data-target="#editRequestModal{{ request.id }}">Editar</a>
+                        <a class="dropdown-item" href="#" data-toggle="modal" data-target="#deleteRequestModal{{ request.id }}">Eliminar</a>
+                      </div>
+                      {% endif %}
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+
+            {% for request in user_requests %}
+            <!-- Modal de Edición -->
+            <div class="modal fade" id="editRequestModal{{ request.id }}" tabindex="-1" role="dialog" aria-labelledby="editRequestModalLabel{{ request.id }}" aria-hidden="true">
+              <div class="modal-dialog modal-dialog-centered" role="document">
+                  <div class="modal-content">
+                      <div class="modal-header">
+                          <h5 class="modal-title" id="editRequestModalLabel{{ request.id }}">Editar Solicitud</h5>
+                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                              <span aria-hidden="true">&times;</span>
+                          </button>
+                      </div>
+                      <div class="modal-body">
+                          <form>
+                              <div class="form-group">
+                                  <label for="editTitle{{ request.id }}">Título</label>
+                                  <input type="text" class="form-control" id="editTitle{{ request.id }}" value="{{ request.title }}">
+                              </div>
+                              <div class="form-group">
+                                  <label for="editDescription{{ request.id }}">Descripción</label>
+                                  <textarea class="form-control" id="editDescription{{ request.id }}" rows="3">{{ request.description }}</textarea>
+                              </div>
+                          </form>
+                      </div>
+                      <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                          <button type="button" class="btn btn-primary" id="saveEditRequest{{ request.id }}">Guardar Cambios</button>
+                      </div>
+                  </div>
+              </div>
+          </div>          
+
+            <!-- Modal de Eliminación -->
+            <div class="modal fade" id="deleteRequestModal{{ request.id }}" tabindex="-1" role="dialog" aria-labelledby="deleteRequestModalLabel{{ request.id }}" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deleteRequestModalLabel{{ request.id }}">Confirmar Eliminación</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            ¿Estás seguro de que deseas eliminar esta solicitud?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-danger" id="confirmDeleteButton{{ request.id }}">Eliminar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            {% if user.is_staff %}
+              {% for request in user_requests %}
+              <!-- Modal de Cambio de Estado -->
+              <div class="modal fade" id="changeStatusModal{{ request.id }}" tabindex="-1" role="dialog" aria-labelledby="changeStatusModalLabel{{ request.id }}" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title" id="changeStatusModalLabel{{ request.id }}">Cambiar Estatus</h5>
+                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                      </button>
+                    </div>
+                    <div class="modal-body">
+                      <p>Seleccione el nuevo estado para esta solicitud:</p>
+                      <select class="form-control" id="newStatus{{ request.id }}">
+                        <option value="pending">Pendiente</option>
+                        <option value="in_progress">En Revisión</option>
+                        <option value="completed">Completado</option>
+                      </select>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                      <button type="button" class="btn btn-primary" id="saveStatus{{ request.id }}">Guardar Cambios</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            {% endif %}
+
+          </div>
+        </div>
+      </div>
+    </div>
+    {% include "includes/footer.html" %}
+
+  </div>
+
+  <div class="modal fade" id="newRequestModal" tabindex="-1" role="dialog" aria-labelledby="newRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="newRequestModalLabel">Nueva Solicitud</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form>
+            <div class="form-group">
+              <label for="requestTitle">Título</label>
+              <input type="text" class="form-control" id="requestTitle" placeholder="Ingrese el título">
+            </div>
+            <div class="form-group">
+              <label for="requestDescription">Descripción</label>
+              <textarea class="form-control" id="requestDescription" rows="3" placeholder="Ingrese la descripción"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="stateSelect">Estado</label>
+              <select class="form-control" id="stateSelect">
+                  <!-- Estados se llenarán dinámicamente desde el archivo JSON -->
+              </select>
+          </div>
+          <div class="form-group">
+              <label for="citySelect">Ciudad</label>
+              <select class="form-control" id="citySelect">
+                  <!-- Ciudades se llenarán dinámicamente según el estado seleccionado -->
+              </select>
+          </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+          <button type="button" class="btn btn-primary" id="saveRequest">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div> 
+  
+
+{% endblock content %}
+
+{% block javascripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const stateSelect = document.getElementById('stateSelect');
+    const citySelect = document.getElementById('citySelect');
+    const saveButton = document.getElementById('saveRequest');
+
+    // Cargar datos de ubicación desde el archivo JSON
+    fetch('/static/json/locations.json')
+      .then(response => response.json())
+      .then(locations => {
+        // Llena el select de estados
+        for (const state in locations) {
+          const option = document.createElement('option');
+          option.value = state;
+          option.textContent = state;
+          stateSelect.appendChild(option);
+        }
+
+        // Agrega un evento de cambio al select de estado para actualizar las ciudades
+        stateSelect.addEventListener('change', function() {
+          const selectedState = stateSelect.value;
+          citySelect.innerHTML = '';
+
+          for (const city of locations[selectedState]) {
+            const option = document.createElement('option');
+            option.value = city;
+            option.textContent = city;
+            citySelect.appendChild(option);
+          }
+        });
+
+        // Agrega un evento de cambio inicial para cargar las ciudades del primer estado
+        const initialState = stateSelect.value;
+        for (const city of locations[initialState]) {
+          const option = document.createElement('option');
+          option.value = city;
+          option.textContent = city;
+          citySelect.appendChild(option);
+        }
+      })
+      .catch(error => {
+        console.error('Error al cargar los datos de ubicación:', error);
+      });
+
+      // Guardar Solicitud
+      saveButton.addEventListener('click', function() {
+        $.ajax({
+            method: "POST",
+            url: "{% url 'create_request' %}",  // Cambia 'create_request' con la URL correcta de tu vista
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            data: {
+                title: document.getElementById('requestTitle').value,
+                description: document.getElementById('requestDescription').value,
+                location: stateSelect.value + ', ' + citySelect.value
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Cierra el modal
+                    $('#newRequestModal').modal('hide');
+                    
+                    // Recarga la página para mostrar la nueva solicitud
+                    location.reload();
+                } else {
+                    console.error('Error al guardar la solicitud');
+                }
+            },
+            error: function(xhr, textStatus, errorThrown) {
+                console.error('Error de red:', errorThrown);
+            }
+        });
+    });
+
+    // Editar solicitud
+    {% for request in user_requests %}
+    $('#saveEditRequest{{ request.id }}').on('click', function() {
+      const title = $('#editTitle{{ request.id }}').val();
+      const description = $('#editDescription{{ request.id }}').val();
+      // const location = $('#editLocation{{ request.id }}').val();
+
+      $.ajax({
+        method: 'POST',
+        url: "{% url 'edit_request' request.id %}",  // Cambia 'edit_request' con la URL correcta de tu vista
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        data: {
+            title: title,
+            description: description,
+            // location: location
+        },
+        success: function(response) {
+            if (response.success) {
+                $('#editRequestModal{{ request.id }}').modal('hide');
+                location.reload();
+            } else {
+                console.error('Error al editar la solicitud');
+            }
+        },
+        error: function(xhr, textStatus, errorThrown) {
+            console.error('Error de red:', errorThrown);
+        }
+      });
+    });
+
+    // Eliminar solicitud
+    $('#confirmDeleteButton{{ request.id }}').on('click', function() {
+      $.ajax({
+        method: 'POST',
+        url: "{% url 'delete_request' request.id %}",  // Cambia 'delete_request' con la URL correcta de tu vista
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+            if (response.success) {
+                $('#deleteRequestModal{{ request.id }}').modal('hide');
+                location.reload();
+            } else {
+                console.error('Error al eliminar la solicitud');
+            }
+        },
+        error: function(xhr, textStatus, errorThrown) {
+            console.error('Error de red:', errorThrown);
+        }
+      });
+    });
+    {% endfor %}
+  });
+</script>
+
+{% if user.is_staff %}
+  {% for request in user_requests %}
+  <script>
+    $(document).ready(function() {
+      $('#saveStatus{{ request.id }}').on('click', function() {
+        const newStatus = $('#newStatus{{ request.id }}').val();
+
+        $.ajax({
+          method: 'POST',
+          url: "{% url 'change_status' request.id %}",  // Cambia 'change_status' con la URL correcta de tu vista
+          headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+          },
+          data: {
+            new_status: newStatus
+          },
+          success: function(response) {
+            if (response.success) {
+              $('#changeStatusModal{{ request.id }}').modal('hide');
+              location.reload();  // Opcional: Recarga la página para reflejar el cambio
+            } else {
+              console.error('Error al cambiar el estado de la solicitud');
+            }
+          },
+          error: function(xhr, textStatus, errorThrown) {
+            console.error('Error de red:', errorThrown);
+          }
+        });
+      });
+    });
+  </script>
+  {% endfor %}
+{% endif %}
+
+{% endblock javascripts %}
+
